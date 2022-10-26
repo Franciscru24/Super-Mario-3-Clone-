@@ -6,6 +6,7 @@ SCREEN_HEIGHT = 450
 SCREEN_TITLE = "Its me Mariooo :D"
 CHARACTER_SCALING = 0.5
 TILE_SCALING = 0.5
+PLAYER_MOVEMENT_SPEED = 5
 
 
 class Mygame(arcade.Window):
@@ -33,7 +34,8 @@ class Mygame(arcade.Window):
 
         # Set background color
         arcade.set_background_color([175, 249, 240])
-        
+
+   
     def setup(self):
         """Set up the game here. Call this function to restart the game."""
 
@@ -70,7 +72,7 @@ class Mygame(arcade.Window):
             # Create boxes on the ground
             box = arcade.Sprite('./img/sbox.png',CHARACTER_SCALING)
             box.position = coordinate
-            self.scene.add_sprite('Wall', box)
+            self.scene.add_sprite('Walls', box)
             # self.wall_list.append(box)
         
         # Create clouds
@@ -80,9 +82,53 @@ class Mygame(arcade.Window):
             # Create clouds on the sky
             cloud = arcade.Sprite('./img/clouds.png',CHARACTER_SCALING)
             cloud.position = coordinates
-            self.scene.add_sprite('Wall', cloud)
+            self.scene.add_sprite('Walls', cloud)
             # self.wall_list.append(cloud)
+            
+        # Create the physics engine
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player_sprite, self.scene.get_sprite_list("Walls")
+            )
+    
+    
+    
+    # Method of the moving character
+    def on_key_press(self, key, modifiers):
+        ''' Called whenever a key is pressed '''
+        if key == arcade.key.UP or key == arcade.key.W:
+            self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
+            
+        elif key == arcade.key.DOWN or key == arcade.key.S:
+            self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
+    
+        elif key == arcade.key.LEFT or key == arcade.key.A:
+            self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
+    
+        elif key == arcade.key.RIGHT or key == arcade.key.D:
+            self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
+    
+    
+    # Method of the stop character
+    def on_key_release(self, key, modifiers):
+        if key == arcade.key.UP or key == arcade.key.W:
+            self.player_sprite.change_y = 0
         
+        elif key == arcade.key.DOWN or key == arcade.key.S:
+            self.player_sprite.change_y = 0
+    
+        elif key == arcade.key.LEFT or key == arcade.key.A:
+            self.player_sprite.change_x = 0
+    
+        elif key == arcade.key.RIGHT or key == arcade.key.D:
+            self.player_sprite.change_x = 0
+
+ 
+    def on_update(self, delta_time):
+        ''' Movement and game logic '''
+        # Move the player with the physics engine
+        self.physics_engine.update()
+        
+
     def on_draw(self):
         """Render the screen."""
         
@@ -94,6 +140,8 @@ class Mygame(arcade.Window):
         # self.wall_list.draw()
         # self.player_list.draw()
         self.scene.draw()
+        
+    
 
 def main():
     """ Main function """
