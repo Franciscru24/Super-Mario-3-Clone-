@@ -1,174 +1,182 @@
-import arcade
+from const import *
+import arcade as arc
 
-# Constants
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 450
-SCREEN_TITLE = "Its me Mariooo :D"
-CHARACTER_SCALING = 0.5
-TILE_SCALING = 0.5
-PLAYER_MOVEMENT_SPEED = 5
-GRAVIY = 1
-PLAYER_JUNP_SPEED = 25
+""" 
+Clase principal del Juego 
+"""
 
 
-class Mygame(arcade.Window):
+class superMarioGame(arc.Window):
     """
-    Main application class.
+    Función de inicialización
     """
 
-    def __init__(self) -> None:
-        # Call the parent class and set up the window
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    def __init__(self):
+        # Constructor de la ventana
+        super().__init__(ANCHO_VENTANA, ALTO_VENTANA, TITULO_VENTANA)
+        arc.set_background_color(arc.csscolor.CORNFLOWER_BLUE)
 
-        # Define first attributes
-        # These are 'lists' that keep track of our sprites. Each sprite should
+        # Inicialización de la variable para el motor de fisica
+        self.motor_de_fisicas = None
 
-        # go into a list.
-        # self.wall_list = None
-        # self.player_list = None
+        # Inicialización de la scena que contendran las sprites y objetos de colisión
+        self.sprites = None
 
-        # Our scene object
-        self.scene = None
-
-        # Separate variable that holds the player sprite
-        self.player_sprite = None
-
-        # Set background color
-        arcade.set_background_color([175, 249, 240])
-
-        # A camera that can be used for used for scrolling the screen
+        # Inicialización de una camara para seguir al personaje
         self.camera = None
 
+    """
+    Función de configuración
+    """
+
     def setup(self):
-        """Set up the game here. Call this function to restart the game."""
+        # Definiendo la cámara
+        self.camera = arc.Camera(self.width, self.height)
 
-        # Initialize Scene
-        self.scene = arcade.Scene()
+        # Definiendp los atributos
+        self.sprites = arc.Scene()
 
-        # Create the Sprite lists
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("Walls", use_spatial_hash=True)
+        # Definiendo el sprite del jugador
+        self.sprite_jugador = arc.Sprite(JUGADOR, ESCALA_PERSONAJE)
+        self.sprite_jugador.center_x = 280
+        self.sprite_jugador.center_y = 550
+        self.sprites.add_sprite("Jugador", self.sprite_jugador)
 
-        # Create the sprite lists
-        # self.player_list = arcade.SpriteList()
-        # self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        # Definiendo la posición de los tubos
+        for pos in POSICION_TUBOS:
+            tubo = arc.Sprite(TUBO, ESCALA_TUBO)
+            tubo.position = pos
+            self.sprites.add_sprite("Paredes", tubo)
 
-        # Set up the player, specifically placing it at these coordinates
-        image_player_source = "./assets/media/sprites/small_mario_right.png"
-        self.player_sprite = arcade.Sprite(image_player_source, CHARACTER_SCALING)
-        self.player_sprite.center_x = 64
-        self.player_sprite.center_y = 96
-        self.scene.add_sprite("Player", self.player_sprite)
-        # self.player_list.append(self.player_sprite)
+        # Definiendo la posición del piso
+        for i in range(0, 1000, 500):
+            piso = arc.Sprite(PISO, ESCALA_PISO)
+            piso.center_x = i
+            piso.center_y = 200
+            self.sprites.add_sprite("Paredes", piso)
 
-        # Create the ground
-        wall = arcade.Sprite("./assets/media/sprites/floor.png", TILE_SCALING)
-        wall.center_x = 500
-        wall.center_y = 64
-        self.scene.add_sprite("Walls", wall)
-        # self.wall_list.append(wall)
-
-        # Create boxes
-        coordinate_list_box = [[512, 96], [256, 96], [768, 96]]
-
-        for coordinate in coordinate_list_box:
-            # Create boxes on the ground
-            box = arcade.Sprite("./assets/media/sprites/sbox.png", CHARACTER_SCALING)
-            box.position = coordinate
-            self.scene.add_sprite("Walls", box)
-            # self.wall_list.append(box)
-
-        # Create clouds
-        coordinate_list_clouds = [[250, 300], [500, 300], [750, 300], [1000, 300]]
-
-        for coordinates in coordinate_list_clouds:
-            # Create clouds on the sky
-            cloud = arcade.Sprite(
-                "./assets/media/sprites/clouds.png", CHARACTER_SCALING
-            )
-            cloud.position = coordinates
-            self.scene.add_sprite("Walls", cloud)
-            # self.wall_list.append(cloud)
-
-        # Create the physics engine
-        self.physics_engine = arcade.PhysicsEnginePlatformer(
-            self.player_sprite, gravity_constant=GRAVIY, walls=self.scene["Walls"]
+        # Definiendo un motor de fisicas simple
+        self.motor_de_fisicas = arc.PhysicsEnginePlatformer(
+            self.sprite_jugador,
+            gravity_constant=GRAVEDAD,
+            walls=self.sprites["Paredes"],
         )
 
-        # Set up the camera
-        self.camera = arcade.Camera(self.width, self.height)
+        # Bandera sobre el estado de las teclas presionadas
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
 
-    # Funtion from camera
-    def center_camera_to_player(self):
-        screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player_sprite.center_y - (
+    """
+    Función de renderizado
+    """
+
+    def on_draw(self):
+        # Limpia la ventana
+        self.clear()
+
+        # Activación de la cámara
+        self.camera.use()
+
+        # Dibuja los sprites en la ventana
+        self.sprites.draw()
+
+    """
+    Funciones para controlar el movimiento del jugador
+    """
+
+    def actualiza_movimiento_jugador(self):
+        self.sprite_jugador.change_x = 0
+        self.sprite_jugador.change_y = 0
+
+        if self.up_pressed and not self.down_pressed:
+            # self.sprite_jugador.change_y = VELOCIDAD_MOVIMIENTO_JUGADOR
+            if self.motor_de_fisicas.can_jump():
+                self.sprite_jugador.change_y = VELOCIDAD_SALTO_JUGADOR
+        elif self.down_pressed and not self.up_pressed:
+            self.sprite_jugador.change_y = -VELOCIDAD_MOVIMIENTO_JUGADOR
+        elif self.right_pressed and not self.left_pressed:
+            self.sprite_jugador.change_x = VELOCIDAD_MOVIMIENTO_JUGADOR
+        elif self.left_pressed and not self.right_pressed:
+            self.sprite_jugador.change_x = -VELOCIDAD_MOVIMIENTO_JUGADOR
+
+    def on_key_press(self, key, modifiers):
+        if key == arc.key.UP or key == arc.key.W:
+            self.up_pressed = True
+            self.actualiza_movimiento_jugador()
+        elif key == arc.key.DOWN or key == arc.key.S:
+            self.down_pressed = True
+            self.actualiza_movimiento_jugador()
+        elif key == arc.key.RIGHT or key == arc.key.D:
+            self.right_pressed = True
+            self.actualiza_movimiento_jugador()
+        elif key == arc.key.LEFT or key == arc.key.A:
+            self.left_pressed = True
+            self.actualiza_movimiento_jugador()
+
+    def on_key_release(self, key, modifiers):
+        if key == arc.key.UP or key == arc.key.W:
+            self.up_pressed = False
+            self.actualiza_movimiento_jugador()
+        elif key == arc.key.DOWN or key == arc.key.S:
+            self.down_pressed = False
+            self.actualiza_movimiento_jugador()
+        elif key == arc.key.RIGHT or key == arc.key.D:
+            self.right_pressed = False
+            self.actualiza_movimiento_jugador()
+        elif key == arc.key.LEFT or key == arc.key.A:
+            self.left_pressed = False
+            self.actualiza_movimiento_jugador()
+
+    """
+    Función que actualiza la camara del juego
+    """
+
+    def centrar_camara(self):
+        centro_camara_x = self.sprite_jugador.center_x - (
+            self.camera.viewport_width / 2
+        )
+        centro_camara_y = self.sprite_jugador.center_y - (
             self.camera.viewport_height / 2
         )
 
-        # Don't let camera travel past 0
-        if screen_center_x < 0:
-            screen_center_x = 0
+        # Verifica que la camara no salga de las dimensiones de la ventana
+        if centro_camara_x < 0:
+            centro_camara_x = 0
+        if centro_camara_y < 0:
+            centro_camara_y = 0
 
-        if screen_center_y < 0:
-            screen_center_y = 0
+        centro_camara = [centro_camara_x, centro_camara_y]
 
-        player_centered = screen_center_x, screen_center_y
+        self.camera.move_to(centro_camara)
 
-        self.camera.move_to(player_centered)
-
-    # Method of the moving character
-    def on_key_press(self, key, modifiers):
-        """Called whenever a key is pressed"""
-        if key == arcade.key.UP or key == arcade.key.W:
-            if self.physics_engine.can_jump():
-                self.player_sprite.change_y = PLAYER_JUNP_SPEED
-
-        elif key == arcade.key.LEFT or key == arcade.key.A:
-            self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
-
-        elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
-
-    # Method of the stop character
-    def on_key_release(self, key, modifiers):
-        """Called when the user releases a key"""
-        if key == arcade.key.LEFT or key == arcade.key.A:
-            self.player_sprite.change_x = 0
-
-        elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player_sprite.change_x = 0
+    """
+    Función que actualiza el motor de fisicas
+    """
 
     def on_update(self, delta_time):
-        """Movement and game logic"""
-        # Move the player with the physics engine
-        self.physics_engine.update()
+        # Establece y actualiza el motor de físicas
+        self.motor_de_fisicas.update()
 
-        # Position the camera
-        self.center_camera_to_player()
+        # Establece y actualiza la camara del jugador
+        self.centrar_camara()
 
-    def on_draw(self):
-        """Render the screen"""
 
-        # Clear the screen to the background color
-        self.clear()
-
-        # Code to draw the screen goes here
-        # Draw our sprites
-        # self.wall_list.draw()
-        # self.player_list.draw()
-        self.scene.draw()
-
-        # Activate our camera
-        self.camera.use()
+"""
+Función principal
+"""
 
 
 def main():
-    """Main function"""
+    ventana = superMarioGame()
+    ventana.setup()
+    arc.run()
 
-    window = Mygame()
-    window.setup()
-    arcade.run()
 
+"""
+Validación de ejecución de programa
+"""
 
 if __name__ == "__main__":
     main()
