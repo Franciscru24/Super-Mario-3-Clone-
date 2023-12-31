@@ -15,11 +15,13 @@ GRAVEDAD = 1
 ESCALA_PERSONAJE = 0.64
 ESCALA_TUBO = 0.5
 ESCALA_PISO = 0.5
+ESCALA_MONEDA = 0.5
 
 # Recursos utilizados
 JUGADOR = "./assets/media/sprites/small_mario_right.png"
 PISO = "./assets/media/sprites/floor.png"
 TUBO = "./assets/media/sprites/tube.png"
+MONEDA = "./assets/media/sprites/spbox.png"
 
 
 # Posición de objetos

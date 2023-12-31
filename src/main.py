@@ -19,6 +19,13 @@ class superMarioGame(arc.Window):
         # Inicialización de la variable para el motor de fisica
         self.motor_de_fisicas = None
 
+        # Inicialización de la variable para el personaje del jugador
+        self.sprite_jugador = None
+
+        # Inicialización de variables para los sonidos del juego
+        self.sonido_moneda = None
+        self.sonido_salto = None
+
         # Inicialización de la scena que contendran las sprites y objetos de colisión
         self.sprites = None
 
@@ -42,18 +49,29 @@ class superMarioGame(arc.Window):
         self.sprite_jugador.center_y = 550
         self.sprites.add_sprite("Jugador", self.sprite_jugador)
 
+        # Definiendo los sonidos del juego
+        self.sonido_moneda = arc.load_sound("./assets/media/sound/coin.wav")
+        self.sonido_salto = arc.load_sound("./assets/media/sound/jump.wav")
+
         # Definiendo la posición de los tubos
-        for pos in POSICION_TUBOS:
+        for pos_t in POSICION_TUBOS:
             tubo = arc.Sprite(TUBO, ESCALA_TUBO)
-            tubo.position = pos
+            tubo.position = pos_t
             self.sprites.add_sprite("Paredes", tubo)
 
         # Definiendo la posición del piso
-        for i in range(0, 1000, 500):
+        for pos_p in range(0, 10000, 1200):
             piso = arc.Sprite(PISO, ESCALA_PISO)
-            piso.center_x = i
+            piso.center_x = pos_p
             piso.center_y = 200
             self.sprites.add_sprite("Paredes", piso)
+
+        # Definiendo la posición de las monedas
+        for pos_m in range(128, 1840, 256):
+            moneda = arc.Sprite(MONEDA, ESCALA_MONEDA)
+            moneda.center_x = pos_m
+            moneda.center_y = 340
+            self.sprites.add_sprite("Monedas", moneda)
 
         # Definiendo un motor de fisicas simple
         self.motor_de_fisicas = arc.PhysicsEnginePlatformer(
@@ -94,8 +112,8 @@ class superMarioGame(arc.Window):
             # self.sprite_jugador.change_y = VELOCIDAD_MOVIMIENTO_JUGADOR
             if self.motor_de_fisicas.can_jump():
                 self.sprite_jugador.change_y = VELOCIDAD_SALTO_JUGADOR
-        elif self.down_pressed and not self.up_pressed:
-            self.sprite_jugador.change_y = -VELOCIDAD_MOVIMIENTO_JUGADOR
+        # elif self.down_pressed and not self.up_pressed:
+        #     self.sprite_jugador.change_y = -VELOCIDAD_MOVIMIENTO_JUGADOR
         elif self.right_pressed and not self.left_pressed:
             self.sprite_jugador.change_x = VELOCIDAD_MOVIMIENTO_JUGADOR
         elif self.left_pressed and not self.right_pressed:
@@ -105,9 +123,10 @@ class superMarioGame(arc.Window):
         if key == arc.key.UP or key == arc.key.W:
             self.up_pressed = True
             self.actualiza_movimiento_jugador()
-        elif key == arc.key.DOWN or key == arc.key.S:
-            self.down_pressed = True
-            self.actualiza_movimiento_jugador()
+            arc.play_sound(self.sonido_salto)
+        # elif key == arc.key.DOWN or key == arc.key.S:
+        #    self.down_pressed = True
+        #    self.actualiza_movimiento_jugador()
         elif key == arc.key.RIGHT or key == arc.key.D:
             self.right_pressed = True
             self.actualiza_movimiento_jugador()
@@ -119,9 +138,9 @@ class superMarioGame(arc.Window):
         if key == arc.key.UP or key == arc.key.W:
             self.up_pressed = False
             self.actualiza_movimiento_jugador()
-        elif key == arc.key.DOWN or key == arc.key.S:
-            self.down_pressed = False
-            self.actualiza_movimiento_jugador()
+        # elif key == arc.key.DOWN or key == arc.key.S:
+        #    self.down_pressed = False
+        #    self.actualiza_movimiento_jugador()
         elif key == arc.key.RIGHT or key == arc.key.D:
             self.right_pressed = False
             self.actualiza_movimiento_jugador()
@@ -161,6 +180,17 @@ class superMarioGame(arc.Window):
 
         # Establece y actualiza la camara del jugador
         self.centrar_camara()
+
+        # Lista de monedas colisionadas
+        lista_monedas_colisionadas = arc.check_for_collision_with_list(
+            self.sprite_jugador, self.sprites["Monedas"]
+        )
+
+        # Comprobar la colisión del personaje con las monedas
+        for mone in lista_monedas_colisionadas:
+            # Remover la moneda de la lista almacenada en la scena sprites
+            mone.remove_from_sprite_lists()
+            arc.play_sound(self.sonido_moneda)
 
 
 """
